@@ -42,6 +42,13 @@ export const createInvoice = async (userId, data) => {
         amount: data.amount,
         total: data.total,
         status: "UNPAID",
+        payments: {
+          create: {
+            amount: data.total,
+            method: "CASH",
+            status: "PENDING",
+          },
+        },
       },
       include: {
         appointment: {

@@ -154,8 +154,8 @@ export const clinicApi = {
   deleteInvoice: (id: string) => data<{ message: string }>(api.delete(`/invoices/${id}`)),
   payments: () => data<Payment[]>(api.get("/payments")),
   payment: (id: string) => data<Payment>(api.get(`/payments/${id}`)),
-  recordCashPayment: (invoiceId: string, amount: number) =>
-    data<Payment>(api.post("/payments", { invoiceId, amount })),
+  updatePayment: (paymentId: string) =>
+    data<Payment>(api.patch(`/payments/${paymentId}`)),
 };
 
 export const adminApi = {

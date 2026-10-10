@@ -72,7 +72,7 @@ export interface Payment {
   invoiceId: string;
   amount: number | string;
   method: "CASH";
-  status: "COMPLETED";
+  status: "PENDING" | "COMPLETED";
   paidAt?: string | null;
   invoice: Invoice;
 }

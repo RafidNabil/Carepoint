@@ -246,3 +246,126 @@ export const getMyPayments = async (userId, role) => {
 
   throw new Error("Access denied");
 };
+
+export const updatePayment = async (userId, role, paymentId) => {
+  const payment = await prisma.payment.findUnique({
+    where: {
+      id: paymentId,
+    },
+    include: {
+      invoice: {
+        include: {
+          appointment: true,
+        },
+      },
+    },
+  });
+
+  if (!payment) {
+    throw new Error("Payment not found");
+  }
+
+  if (payment.status === "COMPLETED") {
+    throw new Error("Payment is already completed");
+  }
+
+  if (role === "DOCTOR") {
+    const doctor = await prisma.doctor.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    if (
+      !doctor ||
+      payment.invoice.appointment.doctorId !== doctor.id
+    ) {
+      throw new Error("Access denied");
+    }
+  } else if (role === "PATIENT") {
+    const patient = await prisma.patient.findUnique({
+      where: {
+        userId,
+      },
+    });
+
+    if (
+      !patient ||
+      payment.invoice.appointment.patientId !== patient.id
+    ) {
+      throw new Error("Access denied");
+    }
+  } else if (role !== "ADMIN") {
+    throw new Error("Access denied");
+  }
+
+  if (payment.invoice.status === "PAID") {
+    throw new Error("Invoice is already paid");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const updatedPayment = await tx.payment.update({
+      where: {
+        id: paymentId,
+      },
+      data: {
+        status: "COMPLETED",
+        method: "CASH",
+        paidAt: new Date(),
+      },
+    });
+
+    await tx.invoice.update({
+      where: {
+        id: payment.invoiceId,
+      },
+      data: {
+        status: "PAID",
+      },
+    });
+
+    await tx.appointment.update({
+      where: {
+        id: payment.invoice.appointmentId,
+      },
+      data: {
+        paymentStatus: "PAID",
+      },
+    });
+
+    await createAuditLog(tx, {
+      userId,
+      action: "PAYMENT_UPDATED",
+      entityType: "PAYMENT",
+      entityId: updatedPayment.id,
+      oldValue: {
+        status: payment.status,
+        method: payment.method,
+        paidAt: payment.paidAt?.toISOString() ?? null,
+      },
+      newValue: {
+        status: updatedPayment.status,
+        method: updatedPayment.method,
+        paidAt: updatedPayment.paidAt?.toISOString() ?? null,
+      },
+    });
+
+    return tx.payment.findUnique({
+      where: {
+        id: updatedPayment.id,
+      },
+      include: {
+        invoice: {
+          include: {
+            appointment: {
+              include: {
+                patient: true,
+                doctor: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+};

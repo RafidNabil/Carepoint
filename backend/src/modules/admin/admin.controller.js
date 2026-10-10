@@ -497,7 +497,10 @@ export const getRoles = async (req, res, next) => {
 
 export const createRole = async (req, res, next) => {
   try {
-    const role = await createRoleService(req.body);
+    const role = await createRoleService(
+      req.user.userId,
+      req.body
+    );
 
     res.status(201).json({
       success: true,
@@ -511,6 +514,7 @@ export const createRole = async (req, res, next) => {
 export const updateRole = async (req, res, next) => {
   try {
     const role = await updateRoleService(
+      req.user.userId,
       req.params.id,
       req.body.name
     );
@@ -526,7 +530,10 @@ export const updateRole = async (req, res, next) => {
 
 export const deleteRole = async (req, res, next) => {
   try {
-    const result = await deleteRoleService(req.params.id);
+    const result = await deleteRoleService(
+      req.user.userId,
+      req.params.id
+    );
 
     res.json({
       success: true,
@@ -565,7 +572,10 @@ export const createPermission = async (
 ) => {
   try {
     const permission =
-      await createPermissionService(req.body);
+      await createPermissionService(
+        req.user.userId,
+        req.body
+      );
 
     res.status(201).json({
       success: true,
@@ -584,6 +594,7 @@ export const updatePermission = async (
   try {
     const permission =
       await updatePermissionService(
+        req.user.userId,
         req.params.id,
         req.body.name
       );
@@ -604,7 +615,10 @@ export const deletePermission = async (
 ) => {
   try {
     const result =
-      await deletePermissionService(req.params.id);
+      await deletePermissionService(
+        req.user.userId,
+        req.params.id
+      );
 
     res.json({
       success: true,
@@ -623,6 +637,7 @@ export const assignPermissionToRole = async (
   try {
     const result =
       await assignPermissionToRoleService(
+        req.user.userId,
         req.params.roleId,
         req.body.permissionId
       );
@@ -644,6 +659,7 @@ export const removePermissionFromRole = async (
   try {
     const result =
       await removePermissionFromRoleService(
+        req.user.userId,
         req.params.roleId,
         req.params.permissionId
       );

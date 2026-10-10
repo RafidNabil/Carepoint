@@ -12,6 +12,7 @@ import {
   createPayment,
   getPaymentById,
   getMyPayments,
+  updatePaymentController
 } from "./payment.controller.js";
 
 import {
@@ -41,5 +42,11 @@ router.get(
   requireRole("PATIENT", "DOCTOR", "ADMIN"),
   getPaymentById
 );
+
+router.patch(
+  "/:paymentId",
+  authenticate,
+  requirePermission("RECORD_PAYMENTS", "MANAGE_PAYMENTS"),
+  updatePaymentController);
 
 export default router;

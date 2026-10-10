@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity, CalendarDays, Check, CircleDollarSign, FileText,
+  Activity, CalendarDays, CircleDollarSign, FileText,
   Plus, RefreshCw, Search, ShieldCheck, Stethoscope, Trash2, Users,
 } from "lucide-react";
 import {
@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { adminApi, apiErrorMessage, clinicApi } from "@/lib/api";
+import { CashPaymentRecorder } from "@/features/portal/CashPaymentRecorder";
 import { useNotice } from "@/components/shared/useNotice";
 import { formatDate, formatMoney, humanize } from "@/lib/utils";
 import { Badge, Button, Card, CardBody, EmptyState, ErrorState, Field, Input, PageHeader, Skeleton, Table, TableWrap, Td, Th } from "@/components/ui";
@@ -43,7 +44,7 @@ const headings: Record<AdminSection, { title: string; eyebrow: string; descripti
   appointments: { title: "All appointments", eyebrow: "Operations", description: "Review clinic appointments and update their status where supported." },
   schedules: { title: "Doctor schedules", eyebrow: "Operations", description: "Maintain weekly clinic availability for registered doctors." },
   invoices: { title: "Invoice management", eyebrow: "Billing", description: "Review, create, or remove eligible invoices. Paid or payment-linked invoices cannot be deleted." },
-  payments: { title: "Cash payments", eyebrow: "Billing", description: "Record exact cash payments against unpaid invoices." },
+  payments: { title: "Cash payments", eyebrow: "Billing", description: "Record cash against pending payment records." },
   reports: { title: "Reports & analytics", eyebrow: "Insights", description: "Clinic totals and counts exposed by the existing reporting API." },
   settings: { title: "Clinic settings", eyebrow: "Configuration", description: "Manage the clinic's database-backed key/value settings." },
   "booking-rules": { title: "Booking rules", eyebrow: "Configuration", description: "Manage the booking rules currently stored by the backend." },
@@ -285,46 +286,14 @@ function InvoicesAdminPage() {
 }
 
 function CashPaymentsPage() {
-  const [selected, setSelected] = useState<Invoice | null>(null);
-  const [invoiceSearch, setInvoiceSearch] = useState("");
-  const queryClient = useQueryClient();
-  const notify = useNotice();
   const payments = useQuery({ queryKey: ["payments"], queryFn: clinicApi.payments });
-  const invoices = useQuery({ queryKey: ["invoices"], queryFn: clinicApi.invoices });
-  const unpaid = (invoices.data ?? []).filter((invoice) => invoice.status === "UNPAID" &&
-    `${invoice.appointment.patient?.firstName ?? ""} ${invoice.appointment.patient?.lastName ?? ""} ${invoice.appointment.doctor?.firstName ?? ""} ${invoice.appointment.doctor?.lastName ?? ""}`.toLowerCase().includes(invoiceSearch.toLowerCase()),
-  );
-  const record = useMutation({
-    mutationFn: (invoice: Invoice) => clinicApi.recordCashPayment(invoice.id, Number(invoice.total)),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["payments"] });
-      await queryClient.invalidateQueries({ queryKey: ["invoices"] });
-      await queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      notify("Cash payment recorded and invoice marked paid.");
-      setSelected(null);
-    },
-    onError: (error) => notify(apiErrorMessage(error), "error"),
-  });
   return <div>
     <PageHeader {...headings.payments} />
-    <Card className="mb-5"><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Unpaid invoices</h2><p className="mt-1 text-sm text-slate-500">The payment must exactly match the invoice total. The backend records CASH/COMPLETED.</p></div>
-      <CardBody className="space-y-4">
-        <label className="relative block max-w-sm"><Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" /><Input className="pl-10" placeholder="Search patient or doctor" value={invoiceSearch} onChange={(event) => setInvoiceSearch(event.target.value)} /></label>
-        {invoices.isError && <ErrorState message={apiErrorMessage(invoices.error)} retry={() => void invoices.refetch()} />}
-        {invoices.isPending ? <Skeleton className="h-20" /> : unpaid.length ? <div className="space-y-2">{unpaid.map((invoice) => <div key={invoice.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 p-4 sm:flex-row sm:items-center">
-          <div className="flex-1"><p className="text-sm font-semibold text-slate-900">{invoice.appointment.patient?.firstName} {invoice.appointment.patient?.lastName}<span className="mx-2 text-slate-300">·</span>Dr. {invoice.appointment.doctor?.firstName} {invoice.appointment.doctor?.lastName}</p><p className="mt-1 text-xs text-slate-500">Appointment {formatDate(invoice.appointment.appointmentDate)} · Invoice {invoice.id.slice(0, 8)}</p></div>
-          <span className="font-bold text-slate-900">{formatMoney(invoice.total)}</span><Button size="sm" onClick={() => setSelected(invoice)}><CircleDollarSign className="size-4" />Record cash</Button>
-        </div>)}</div> : <EmptyState icon={<Check className="size-5" />} title="No unpaid invoices" description="All current invoices are marked paid, or no invoices have been created." />}
-      </CardBody>
-    </Card>
+    <CashPaymentRecorder />
     <Card><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Recent payment records</h2></div>
       {payments.isError && <CardBody><ErrorState message={apiErrorMessage(payments.error)} retry={() => void payments.refetch()} /></CardBody>}
-      {payments.isPending ? <CardBody><Skeleton className="h-28" /></CardBody> : payments.data?.length ? <TableWrap><Table><thead><tr><Th>Payment date</Th><Th>Patient</Th><Th>Doctor</Th><Th>Amount</Th><Th>Method</Th><Th>Status</Th></tr></thead><tbody>{payments.data.slice(0, 10).map((payment) => <tr key={payment.id}><Td>{payment.paidAt ? formatDate(payment.paidAt) : "—"}</Td><Td>{payment.invoice.appointment.patient?.firstName} {payment.invoice.appointment.patient?.lastName}</Td><Td>Dr. {payment.invoice.appointment.doctor?.firstName} {payment.invoice.appointment.doctor?.lastName}</Td><Td className="font-semibold">{formatMoney(payment.amount)}</Td><Td><Badge tone="info">{payment.method}</Badge></Td><Td><Badge tone="success">{humanize(payment.status)}</Badge></Td></tr>)}</tbody></Table></TableWrap> : <EmptyState icon={<FileText className="size-5" />} title="No payment records" description="Recorded cash payments will appear here." />}
+      {payments.isPending ? <CardBody><Skeleton className="h-28" /></CardBody> : payments.data?.length ? <TableWrap><Table><thead><tr><Th>Payment date</Th><Th>Patient</Th><Th>Doctor</Th><Th>Amount</Th><Th>Method</Th><Th>Status</Th></tr></thead><tbody>{payments.data.slice(0, 10).map((payment) => <tr key={payment.id}><Td>{payment.paidAt ? formatDate(payment.paidAt) : "—"}</Td><Td>{payment.invoice.appointment.patient?.firstName} {payment.invoice.appointment.patient?.lastName}</Td><Td>Dr. {payment.invoice.appointment.doctor?.firstName} {payment.invoice.appointment.doctor?.lastName}</Td><Td className="font-semibold">{formatMoney(payment.amount)}</Td><Td><Badge tone="info">{payment.method}</Badge></Td><Td><Badge tone={payment.status === "COMPLETED" ? "success" : "warning"}>{humanize(payment.status)}</Badge></Td></tr>)}</tbody></Table></TableWrap> : <EmptyState icon={<FileText className="size-5" />} title="No payment records" description="Payment records will appear here when an invoice is created." />}
     </Card>
-    {selected && <Modal title="Confirm cash payment" onClose={() => setSelected(null)}>
-      <p className="text-sm leading-6 text-slate-600">Record <strong>{formatMoney(selected.total)}</strong> in cash for {selected.appointment.patient?.firstName} {selected.appointment.patient?.lastName}? This immediately marks the invoice and appointment as paid. The backend accepts only an exact invoice total.</p>
-      <div className="mt-5 flex justify-end gap-2"><Button variant="outline" onClick={() => setSelected(null)} disabled={record.isPending}>Go back</Button><Button onClick={() => record.mutate(selected)} disabled={record.isPending}>{record.isPending ? "Recording…" : "Confirm cash received"}</Button></div>
-    </Modal>}
   </div>;
 }
 

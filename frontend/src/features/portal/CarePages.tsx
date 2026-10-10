@@ -8,6 +8,7 @@ import {
   FileText, Plus, Trash2, UserRound,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { CashPaymentRecorder } from "@/features/portal/CashPaymentRecorder";
 import { adminApi, apiErrorMessage, clinicApi } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
 import { useNotice } from "@/components/shared/useNotice";
@@ -310,10 +311,11 @@ export function PaymentsPage() {
   const { user } = useAuth();
   return <div>
     <PageHeader eyebrow="Billing" title="Payment history" description="Payments are cash-based records created at the clinic." />
+    {(user?.role === "DOCTOR" || user?.role === "ADMIN") && <CashPaymentRecorder />}
     {payments.isError && <ErrorState message={apiErrorMessage(payments.error)} retry={() => void payments.refetch()} />}
     <Card>{payments.isPending ? <CardBody className="space-y-3"><Skeleton className="h-14" /><Skeleton className="h-14" /></CardBody> :
-      payments.data?.length ? <TableWrap><Table><thead><tr><Th>Paid on</Th><Th>Appointment date</Th><Th>{user?.role === "PATIENT" ? "Doctor" : user?.role === "DOCTOR" ? "Patient" : "Patient · Doctor"}</Th><Th>Amount</Th><Th>Method</Th><Th>Status</Th></tr></thead><tbody>
-        {payments.data.map((payment) => <tr key={payment.id}><Td>{payment.paidAt ? formatDate(payment.paidAt) : "—"}</Td><Td>{formatDate(payment.invoice?.appointment?.appointmentDate)}</Td><Td>{payment.invoice?.appointment?.patient && payment.invoice?.appointment?.doctor ? `${payment.invoice.appointment.patient.firstName} ${payment.invoice.appointment.patient.lastName} · Dr. ${payment.invoice.appointment.doctor.firstName} ${payment.invoice.appointment.doctor.lastName}` : payment.invoice?.appointment?.doctor ? `Dr. ${payment.invoice.appointment.doctor.firstName} ${payment.invoice.appointment.doctor.lastName}` : payment.invoice?.appointment?.patient ? `${payment.invoice.appointment.patient.firstName} ${payment.invoice.appointment.patient.lastName}` : "—"}</Td><Td className="font-semibold">{formatMoney(payment.amount)}</Td><Td><Badge tone="info">{payment.method}</Badge></Td><Td><Badge tone="success">{humanize(payment.status)}</Badge></Td></tr>)}
+      payments.data?.length ? <TableWrap><Table><thead><tr><Th>Payment date</Th><Th>Appointment date</Th><Th>{user?.role === "PATIENT" ? "Doctor" : user?.role === "DOCTOR" ? "Patient" : "Patient · Doctor"}</Th><Th>Amount</Th><Th>Method</Th><Th>Status</Th></tr></thead><tbody>
+        {payments.data.map((payment) => <tr key={payment.id}><Td>{payment.paidAt ? formatDate(payment.paidAt) : "—"}</Td><Td>{formatDate(payment.invoice?.appointment?.appointmentDate)}</Td><Td>{payment.invoice?.appointment?.patient && payment.invoice?.appointment?.doctor ? `${payment.invoice.appointment.patient.firstName} ${payment.invoice.appointment.patient.lastName} · Dr. ${payment.invoice.appointment.doctor.firstName} ${payment.invoice.appointment.doctor.lastName}` : payment.invoice?.appointment?.doctor ? `Dr. ${payment.invoice.appointment.doctor.firstName} ${payment.invoice.appointment.doctor.lastName}` : payment.invoice?.appointment?.patient ? `${payment.invoice.appointment.patient.firstName} ${payment.invoice.appointment.patient.lastName}` : "—"}</Td><Td className="font-semibold">{formatMoney(payment.amount)}</Td><Td><Badge tone="info">{payment.method}</Badge></Td><Td><Badge tone={payment.status === "COMPLETED" ? "success" : "warning"}>{humanize(payment.status)}</Badge></Td></tr>)}
       </tbody></Table></TableWrap> : <EmptyState icon={<FileText className="size-5" />} title="No payments recorded" description={user?.role === "PATIENT" ? "Cash payments recorded at the clinic will appear here." : "Payment records will appear here when cash is recorded against an invoice."} />}</Card>
   </div>;
 }

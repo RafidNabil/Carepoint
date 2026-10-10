@@ -2,6 +2,7 @@ import {
   createPayment as createPaymentService,
   getPaymentById as getPaymentByIdService,
   getMyPayments as getMyPaymentsService,
+  updatePayment as updatedPaymentService
 } from "./payment.service.js";
 
 export const createPayment = async (req, res, next) => {
@@ -48,6 +49,23 @@ export const getMyPayments = async (req, res, next) => {
     res.json({
       success: true,
       data: payments,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePaymentController = async (req, res, next) => {
+  try {
+    const payment = await updatedPaymentService(
+      req.user.userId,
+      req.user.role,
+      req.params.paymentId
+    );
+
+    res.status(200).json({
+      success: true,
+      data: payment,
     });
   } catch (error) {
     next(error);

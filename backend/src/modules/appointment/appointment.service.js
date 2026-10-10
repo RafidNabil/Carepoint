@@ -143,15 +143,6 @@ export const bookAppointment = async (patientUserId, data) => {
       },
     });
 
-    await tx.invoice.create({
-      data: {
-        appointmentId: appointment.id,
-        amount: doctor.consultationFee,
-        total: doctor.consultationFee,
-        status: "UNPAID",
-      },
-    });
-
     await createAuditLog(tx, {
       userId: patientUserId,
       action: "APPOINTMENT_BOOKED",
@@ -545,6 +536,24 @@ export const completeAppointment = async (
       },
     });
 
+    const invoice = await tx.invoice.create({
+      data: {
+        appointmentId: appointment.id,
+        amount: doctor.consultationFee,
+        total: doctor.consultationFee,
+        status: "UNPAID",
+      },
+    });
+
+    const payment = await tx.payment.create({
+      data: {
+        invoiceId: invoice.id,
+        amount: invoice.amount,
+        method: "CASH",
+        status: "PENDING",
+      },
+    });
+
     await createAuditLog(tx, {
       userId,
       action: "APPOINTMENT_COMPLETED",
@@ -558,7 +567,11 @@ export const completeAppointment = async (
       },
     });
 
-    return updatedAppointment;
+    return {
+      ...updatedAppointment,
+      invoice,
+      payment,
+    };
   });
 };
 
