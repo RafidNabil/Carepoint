@@ -1,4 +1,5 @@
 import { verifyAccessToken } from "../utils/jwt.js";
+import { prisma } from "../config/prisma.js";
 
 export const authenticate = (req, res, next) => {
   try {
