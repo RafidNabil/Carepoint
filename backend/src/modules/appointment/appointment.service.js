@@ -39,9 +39,11 @@ export const getAvailableSlots = async (doctorId, date) => {
       lastName: true,
       specialization: true,
       schedules: {
-        where: {
-          dayOfWeek: getDayOfWeek(date),
-        },
+        ...(date && {
+          where: {
+            dayOfWeek: getDayOfWeek(date),
+          },
+        }),
         select: {
           dayOfWeek: true,
           startTime: true,

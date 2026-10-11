@@ -10,7 +10,7 @@ import { clinicApi, apiErrorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
 import { useNotice } from "@/components/shared/useNotice";
 import { bookAppointmentSchema, profileSchema, doctorProfileSchema, type ProfileFields, type DoctorProfileFields } from "@/lib/schemas";
-import { formatDate, formatMoney, initials } from "@/lib/utils";
+import { formatMoney, initials } from "@/lib/utils";
 import { Badge, Button, Card, CardBody, EmptyState, ErrorState, Field, Input, PageHeader, Skeleton } from "@/components/ui";
 import type { Doctor, Patient } from "@/types";
 
@@ -98,10 +98,21 @@ export function BookAppointmentPage() {
   });
   const date = useWatch({ control, name: "appointmentDate" });
   const schedules = useQuery({
-    queryKey: ["availability", id, date],
-    queryFn: () => clinicApi.availableSchedules(id, date),
-    enabled: Boolean(id && date && !errors.appointmentDate),
+    queryKey: ["availability", id],
+    queryFn: () => clinicApi.availableSchedules(id),
+    enabled: Boolean(id),
   });
+  const weeklySchedules = useMemo(
+    () => [...(schedules.data?.schedules ?? [])].sort((left, right) =>
+      left.dayOfWeek - right.dayOfWeek || left.startTime.localeCompare(right.startTime)),
+    [schedules.data?.schedules],
+  );
+  const selectedWeekday = date
+    ? new Date(`${date}T00:00:00.000Z`).getUTCDay()
+    : undefined;
+  const selectedDateAvailable = selectedWeekday === undefined
+    ? undefined
+    : weeklySchedules.some((schedule) => schedule.dayOfWeek === selectedWeekday);
   const booking = useMutation({
     mutationFn: (appointmentDate: string) => clinicApi.bookAppointment(id, appointmentDate),
     onSuccess: async () => {
@@ -121,7 +132,7 @@ export function BookAppointmentPage() {
   if (doctor.isPending) return <Skeleton className="h-80 rounded-2xl" />;
   if (doctor.isError) return <ErrorState message={apiErrorMessage(doctor.error)} retry={() => void doctor.refetch()} />;
   return <div>
-    <PageHeader eyebrow="Appointment booking" title="Choose a date" description="Appointments are booked for a clinic date; the backend does not provide individual appointment times." />
+    <PageHeader eyebrow="Appointment booking" title="Choose a date" description="Review this doctor's weekly availability, then choose an available date." />
     <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
       <Card><CardBody>
         <div className="flex items-center gap-4"><div className="flex size-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><Stethoscope className="size-6" /></div><div><Badge tone="info">{doctor.data.specialization}</Badge><h2 className="mt-1 font-bold text-slate-950">Dr. {doctor.data.firstName} {doctor.data.lastName}</h2></div></div>
@@ -129,16 +140,18 @@ export function BookAppointmentPage() {
         <form onSubmit={handleSubmit(submit)} className="mt-6 space-y-4">
           <input type="hidden" {...register("doctorId")} />
           <Field label="Appointment date" error={errors.appointmentDate?.message}><Input type="date" min={today} {...register("appointmentDate")} /></Field>
-          <Button type="submit" className="w-full" disabled={isSubmitting || booking.isPending || !date}>{booking.isPending ? "Booking…" : "Confirm appointment"}<ArrowRight className="size-4" /></Button>
+          <Button type="submit" className="w-full" disabled={isSubmitting || booking.isPending || !date || selectedDateAvailable === false}>{booking.isPending ? "Booking…" : "Confirm appointment"}<ArrowRight className="size-4" /></Button>
         </form>
-        <p className="mt-3 text-xs leading-5 text-slate-400">Booking confirms a date. Clinic visit times are coordinated separately with the clinic.</p>
+        {selectedDateAvailable !== undefined && <p className={`mt-3 text-xs leading-5 ${selectedDateAvailable ? "text-teal-700" : "text-rose-600"}`}>
+          {selectedDateAvailable ? "The doctor is available on this weekday." : "The doctor is not available on this weekday. Choose another date."}
+        </p>}
+        <p className="mt-2 text-xs leading-5 text-slate-400">Booking confirms a date. Clinic visit times are coordinated separately with the clinic.</p>
       </CardBody></Card>
-      <Card><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Schedule for selected date</h2><p className="mt-1 text-sm text-slate-500">{date ? formatDate(date) : "Select a date to check the doctor's weekday schedule."}</p></div>
-        {schedules.isPending && date ? <CardBody className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-16" /></CardBody> :
+      <Card><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Weekly availability</h2><p className="mt-1 text-sm text-slate-500">Available days and clinic hours</p></div>
+        {schedules.isPending ? <CardBody className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-16" /></CardBody> :
           schedules.isError ? <CardBody><ErrorState message={apiErrorMessage(schedules.error)} retry={() => void schedules.refetch()} /></CardBody> :
-          schedules.data ? schedules.data.schedules.length ? <div className="divide-y divide-slate-100">{schedules.data.schedules.map((schedule, index) => <div key={`${schedule.dayOfWeek}-${schedule.startTime}-${index}`} className="flex items-center gap-3 px-5 py-4"><span className="flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700"><Clock3 className="size-5" /></span><div className="flex-1"><p className="text-sm font-semibold text-slate-800">Clinic availability</p><p className="text-xs text-slate-500">Schedule window returned by the clinic</p></div><Badge tone="success">{clock(schedule.startTime)} – {clock(schedule.endTime)}</Badge></div>)}</div> :
-            <EmptyState icon={<CalendarDays className="size-5" />} title="No schedule found" description="The doctor has no schedule registered for this weekday." /> :
-          <EmptyState icon={<CalendarDays className="size-5" />} title="Check availability" description="Choose a date to see the doctor's configured schedule for that weekday." />}
+          weeklySchedules.length ? <div className="divide-y divide-slate-100">{weeklySchedules.map((schedule, index) => <div key={`${schedule.dayOfWeek}-${schedule.startTime}-${index}`} className="flex items-center gap-3 px-5 py-4"><span className="flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700"><Clock3 className="size-5" /></span><div className="flex-1"><p className="text-sm font-semibold text-slate-800">{weekdays[schedule.dayOfWeek]}</p><p className="text-xs text-slate-500">Clinic hours</p></div><Badge tone="success">{clock(schedule.startTime)} – {clock(schedule.endTime)}</Badge></div>)}</div> :
+            <EmptyState icon={<CalendarDays className="size-5" />} title="No schedule found" description="The doctor has no weekly availability registered." />}
       </Card>
     </div>
   </div>;
@@ -149,6 +162,8 @@ function clock(value: string) {
   if (Number.isNaN(date.getTime())) return value.slice(0, 5);
   return new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Dhaka" }).format(date);
 }
+
+const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function ProfilePage() {
   const { user } = useAuth();

@@ -125,10 +125,10 @@ export const clinicApi = {
     data<Patient>(api.put("/patients/me/profile", body)),
   updateDoctorProfile: (body: Partial<Doctor>) =>
     data<Doctor>(api.put("/doctors/me/profile", body)),
-  availableSchedules: (doctorId: string, date: string) =>
+  availableSchedules: (doctorId: string, date?: string) =>
     data<{
       doctor: Pick<Doctor, "id" | "firstName" | "lastName" | "specialization">;
-      date: string;
+      date?: string;
       schedules: DoctorSchedule[];
     }>(api.get("/appointments/available-slots", { params: { doctorId, date } })),
   bookAppointment: (doctorId: string, appointmentDate: string) =>

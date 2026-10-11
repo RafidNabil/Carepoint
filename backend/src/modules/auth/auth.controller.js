@@ -50,6 +50,12 @@ export const login = async (req, res, next) => {
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Invalid email or password") {
+      return res.status(401).json({
+        success: false,
+        message: error.message,
+      });
+    }
     next(error);
   }
 };

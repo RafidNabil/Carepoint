@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const getAvailableSlotsSchema = z.object({
   doctorId: z.string().uuid(),
-  date: z.string().date(),
+  date: z.string().date().optional(),
 });
 
 export const bookAppointmentSchema = z.object({

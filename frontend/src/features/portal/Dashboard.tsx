@@ -56,7 +56,7 @@ export function Dashboard() {
   const isAdmin = user?.role === "ADMIN";
   const isDoctor = user?.role === "DOCTOR";
   const upcoming = useQuery({ queryKey: ["appointments", "upcoming"], queryFn: clinicApi.upcoming, enabled: !isAdmin });
-  const history = useQuery({ queryKey: ["appointments", "history"], queryFn: clinicApi.history, enabled: isDoctor });
+  const history = useQuery({ queryKey: ["appointments", "history"], queryFn: clinicApi.history});
   const prescriptions = useQuery({ queryKey: ["prescriptions"], queryFn: clinicApi.prescriptions, enabled: user?.role === "PATIENT" });
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: clinicApi.invoices, enabled: user?.role === "PATIENT" });
   const report = useQuery({ queryKey: ["admin", "reports", "overview"], queryFn: () => adminApi.get<OverviewReport>("reports/overview"), enabled: isAdmin });
@@ -103,7 +103,7 @@ export function Dashboard() {
       <>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Upcoming visits" value={upcoming.isPending ? "…" : nextAppointments.length} detail={isDoctor ? "Confirmed appointments" : "Confirmed appointments"} icon={CalendarDays} />
-          <StatCard label="Past visits" value={isDoctor ? (history.data?.length ?? "…") : "—"} detail={isDoctor ? "Appointment history" : "Visit your appointments"} icon={CalendarCheck2} tint="blue" />
+          <StatCard label="Past visits" value={history.data?.length ?? "…"} detail={isDoctor ? "Appointment history" : "Visit your appointments"} icon={CalendarCheck2} tint="blue" />
           <StatCard label="Prescriptions" value={user?.role === "PATIENT" ? (prescriptions.data?.length ?? "…") : "—"} detail="Available in your portal" icon={ClipboardList} tint="violet" />
           <StatCard label="Unpaid invoices" value={user?.role === "PATIENT" ? (invoices.data?.length === undefined ? "…" : openInvoices.length) : "—"} detail="Cash payment at the clinic" icon={CircleDollarSign} tint="amber" />
         </div>

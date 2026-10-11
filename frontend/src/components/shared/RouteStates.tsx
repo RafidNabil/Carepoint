@@ -7,7 +7,7 @@ import type { Role } from "@/types";
 export function ProtectedRoute({ roles }: { roles?: Role[] }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="mx-auto max-w-5xl space-y-5 p-8"><Skeleton className="h-12 w-1/3" /><Skeleton className="h-72" /></div>;
-  if (!user) return <Navigate to="/unauthorized" replace state={{ from: location.pathname }} />;
+  if (!user) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/forbidden" replace />;
   return <Outlet />;
 }

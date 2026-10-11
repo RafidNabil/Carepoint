@@ -10,7 +10,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
-    "prisma:seed-permission": "node prisma/permission_seed.js"
+    "prisma:seed-permission": "node prisma/permission_seed.js",
+    "prisma:seed-doctor": "node prisma/doctor_seed.js",
+    "prisma:seed-patient": "node prisma/patient_seed.js",
+    "prisma:seed-admin": "node prisma/admin_seed.js"
   },
   "keywords": [],
   "author": "",
