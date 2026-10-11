@@ -210,17 +210,17 @@ function SchedulesPage() {
     {schedules.isError && <ErrorState message={apiErrorMessage(schedules.error)} retry={() => void schedules.refetch()} />}
     <Card>{schedules.isPending && doctorId ? <CardBody className="space-y-3"><Skeleton className="h-14" /><Skeleton className="h-14" /></CardBody> :
       !doctorId ? <EmptyState icon={<Stethoscope className="size-5" />} title="Choose a doctor" description="Select a doctor above to view and manage their schedule." /> :
-      schedules.data?.length ? <TableWrap><Table><thead><tr><Th>Weekday</Th><Th>Start</Th><Th>End</Th><Th>Actions</Th></tr></thead><tbody>{schedules.data.map((schedule) => <tr key={schedule.id}>
-        <Td><select defaultValue={schedule.dayOfWeek} id={`day-${schedule.id}`} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm">{weekdays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></Td>
-        <Td><Input aria-label="Schedule start" type="time" className="h-9 w-32" defaultValue={clockInput(schedule.startTime)} id={`start-${schedule.id}`} /></Td>
-        <Td><Input aria-label="Schedule end" type="time" className="h-9 w-32" defaultValue={clockInput(schedule.endTime)} id={`end-${schedule.id}`} /></Td>
-        <Td><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => {
-          const day = document.getElementById(`day-${schedule.id}`) as HTMLSelectElement | null;
-          const start = document.getElementById(`start-${schedule.id}`) as HTMLInputElement | null;
-          const end = document.getElementById(`end-${schedule.id}`) as HTMLInputElement | null;
-          if (day && start && end) update.mutate({ id: schedule.id, dayOfWeek: Number(day.value), startTime: start.value, endTime: end.value });
-        }} disabled={update.isPending}>Save</Button><Button size="icon" variant="ghost" aria-label="Delete schedule" onClick={() => setConfirmDelete(schedule)}><Trash2 className="size-4 text-rose-600" /></Button></div></Td>
-      </tr>)}</tbody></Table></TableWrap> : <EmptyState icon={<CalendarDays className="size-5" />} title="No schedules" description="Add a weekly availability window for this doctor." />}
+        schedules.data?.length ? <TableWrap><Table><thead><tr><Th>Weekday</Th><Th>Start</Th><Th>End</Th><Th>Actions</Th></tr></thead><tbody>{schedules.data.map((schedule) => <tr key={schedule.id}>
+          <Td><select defaultValue={schedule.dayOfWeek} id={`day-${schedule.id}`} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm">{weekdays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select></Td>
+          <Td><Input aria-label="Schedule start" type="time" className="h-9 w-32" defaultValue={clockInput(schedule.startTime)} id={`start-${schedule.id}`} /></Td>
+          <Td><Input aria-label="Schedule end" type="time" className="h-9 w-32" defaultValue={clockInput(schedule.endTime)} id={`end-${schedule.id}`} /></Td>
+          <Td><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => {
+            const day = document.getElementById(`day-${schedule.id}`) as HTMLSelectElement | null;
+            const start = document.getElementById(`start-${schedule.id}`) as HTMLInputElement | null;
+            const end = document.getElementById(`end-${schedule.id}`) as HTMLInputElement | null;
+            if (day && start && end) update.mutate({ id: schedule.id, dayOfWeek: Number(day.value), startTime: start.value, endTime: end.value });
+          }} disabled={update.isPending}>Save</Button><Button size="icon" variant="ghost" aria-label="Delete schedule" onClick={() => setConfirmDelete(schedule)}><Trash2 className="size-4 text-rose-600" /></Button></div></Td>
+        </tr>)}</tbody></Table></TableWrap> : <EmptyState icon={<CalendarDays className="size-5" />} title="No schedules" description="Add a weekly availability window for this doctor." />}
     </Card>
     {confirmDelete && <ConfirmDialog title="Delete this schedule?" description={`${weekdays[confirmDelete.dayOfWeek]} · ${clockInput(confirmDelete.startTime)}–${clockInput(confirmDelete.endTime)}. The clinic will no longer appear available for this weekday.`} pending={remove.isPending} destructive onClose={() => setConfirmDelete(null)} onConfirm={() => remove.mutate(confirmDelete.id)} />}
     <p className="mt-3 text-xs leading-5 text-slate-400">Schedules define weekday availability. The appointment API checks the weekday only; it does not create time-specific booking slots.</p>
@@ -325,7 +325,11 @@ function ReportsPage() {
     {overview.isError && <div className="mt-4"><ErrorState message={apiErrorMessage(overview.error)} retry={() => void overview.refetch()} /></div>}
     <div className="mt-5 grid gap-5 lg:grid-cols-2">
       <Card><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Appointment status</h2><p className="mt-1 text-sm text-slate-500">Current totals by backend status.</p></div><CardBody>
-        {appointments.isError ? <ErrorState message={apiErrorMessage(appointments.error)} retry={() => void appointments.refetch()} /> : appointments.isPending ? <Skeleton className="h-36" /> : <div className="space-y-4">{[["Confirmed", appointments.data.confirmed, "bg-sky-500"], ["Completed", appointments.data.completed, "bg-emerald-500"], ["Cancelled", appointments.data.cancelled, "bg-slate-400"], ["No-show", appointments.data.noShow, "bg-amber-500"]].map(([label, value, color]) => <div key={String(label)}><div className="mb-1 flex justify-between text-sm"><span className="text-slate-600">{label}</span><strong className="text-slate-900">{value}</strong></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, Number(value) / Math.max(1, appointments.data.confirmed + appointments.data.completed + appointments.data.cancelled + appointments.data.noShow) * 100)}%` }} /></div></div>)}</div>}
+        {appointments.isError ? <ErrorState message={apiErrorMessage(appointments.error)} retry={() => void appointments.refetch()} /> : appointments.isPending ? <Skeleton className="h-36" /> : <div className="space-y-4">{[
+          // ["Confirmed", appointments.data.confirmed, "bg-sky-500"],
+          ["Completed", appointments.data.completed, "bg-emerald-500"],
+          ["Cancelled", appointments.data.cancelled, "bg-slate-400"],
+          ["No-show", appointments.data.noShow, "bg-amber-500"]].map(([label, value, color]) => <div key={String(label)}><div className="mb-1 flex justify-between text-sm"><span className="text-slate-600">{label}</span><strong className="text-slate-900">{value}</strong></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(100, Number(value) / Math.max(1, appointments.data.confirmed + appointments.data.completed + appointments.data.cancelled + appointments.data.noShow) * 100)}%` }} /></div></div>)}</div>}
       </CardBody></Card>
       <Card><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-semibold text-slate-900">Invoice revenue</h2><p className="mt-1 text-sm text-slate-500">Totals returned by invoice status.</p></div><CardBody>
         {revenue.isError ? <ErrorState message={apiErrorMessage(revenue.error)} retry={() => void revenue.refetch()} /> : revenue.isPending ? <Skeleton className="h-36" /> : <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-xl bg-emerald-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Paid invoices</p><p className="mt-2 text-2xl font-bold text-emerald-900">{formatMoney(revenue.data.paid)}</p></div><div className="rounded-xl bg-amber-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Unpaid invoices</p><p className="mt-2 text-2xl font-bold text-amber-900">{formatMoney(revenue.data.unpaid)}</p></div></div>}

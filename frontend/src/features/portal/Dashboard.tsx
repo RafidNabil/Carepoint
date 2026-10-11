@@ -57,7 +57,7 @@ export function Dashboard() {
   const isDoctor = user?.role === "DOCTOR";
   const upcoming = useQuery({ queryKey: ["appointments", "upcoming"], queryFn: clinicApi.upcoming, enabled: !isAdmin });
   const history = useQuery({ queryKey: ["appointments", "history"], queryFn: clinicApi.history});
-  const prescriptions = useQuery({ queryKey: ["prescriptions"], queryFn: clinicApi.prescriptions, enabled: user?.role === "PATIENT" });
+  const prescriptions = useQuery({ queryKey: ["prescriptions"], queryFn: clinicApi.prescriptions, enabled: user?.role === "PATIENT" || isDoctor });
   const invoices = useQuery({ queryKey: ["invoices"], queryFn: clinicApi.invoices, enabled: user?.role === "PATIENT" });
   const report = useQuery({ queryKey: ["admin", "reports", "overview"], queryFn: () => adminApi.get<OverviewReport>("reports/overview"), enabled: isAdmin });
 
@@ -91,8 +91,8 @@ export function Dashboard() {
           <Card><CardHeader><h2 className="font-semibold text-slate-900">Administration</h2><p className="mt-1 text-sm text-slate-500">Configuration access is enforced by the API.</p></CardHeader>
             <CardBody className="space-y-1">
               <AdminLink to="/portal/admin/schedules" title="Doctor schedules" />
-              <AdminLink to="/portal/admin/settings" title="Clinic settings" />
-              <AdminLink to="/portal/admin/booking-rules" title="Booking rules" />
+              {/* <AdminLink to="/portal/admin/settings" title="Clinic settings" />
+              <AdminLink to="/portal/admin/booking-rules" title="Booking rules" /> */}
               <AdminLink to="/portal/admin/roles" title="Roles & permissions" />
               <AdminLink to="/portal/admin/audit-logs" title="Audit logs" />
             </CardBody>
@@ -104,7 +104,7 @@ export function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Upcoming visits" value={upcoming.isPending ? "…" : nextAppointments.length} detail={isDoctor ? "Confirmed appointments" : "Confirmed appointments"} icon={CalendarDays} />
           <StatCard label="Past visits" value={history.data?.length ?? "…"} detail={isDoctor ? "Appointment history" : "Visit your appointments"} icon={CalendarCheck2} tint="blue" />
-          <StatCard label="Prescriptions" value={user?.role === "PATIENT" ? (prescriptions.data?.length ?? "…") : "—"} detail="Available in your portal" icon={ClipboardList} tint="violet" />
+          <StatCard label="Prescriptions" value={isDoctor || user?.role === "PATIENT" ? (prescriptions.data?.length ?? "…") : "—"} detail={isDoctor ? "Prescriptions you've written" : "Available in your portal"} icon={ClipboardList} tint="violet" />
           <StatCard label="Unpaid invoices" value={user?.role === "PATIENT" ? (invoices.data?.length === undefined ? "…" : openInvoices.length) : "—"} detail="Cash payment at the clinic" icon={CircleDollarSign} tint="amber" />
         </div>
         {(upcoming.isError || history.isError || prescriptions.isError || invoices.isError) && <div className="mt-5 space-y-2">

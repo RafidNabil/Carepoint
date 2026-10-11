@@ -63,7 +63,15 @@ export function AppointmentsPage() {
               <Td><span className="font-semibold text-slate-800">{formatDate(appointment.appointmentDate)}</span><span className="mt-0.5 block text-xs text-slate-400">Date-only appointment</span></Td>
               <Td><Link to={`/portal/appointments/${appointment.id}`} className="font-medium text-slate-800 hover:text-teal-800">{other ? `${isDoctor ? "" : "Dr. "}${other.firstName} ${other.lastName}` : "Clinic visit"}</Link>{isDoctor && appointment.patient?.phone && <span className="mt-0.5 block text-xs text-slate-400">{appointment.patient.phone}</span>}</Td>
               <Td><AppointmentBadge status={appointment.status} /></Td>
-              <Td><Badge tone={appointment.paymentStatus === "PAID" ? "success" : "warning"}>{humanize(appointment.paymentStatus)}</Badge></Td>
+              <Td>
+                {["CANCELLED", "NO_SHOW"].includes(appointment.status) ? (
+                  <span className="text-slate-400">—</span>
+                ) : (
+                  <Badge tone={appointment.paymentStatus === "PAID" ? "success" : "warning"}>
+                    {humanize(appointment.paymentStatus)}
+                  </Badge>
+                )}
+              </Td>
               <Td><div className="flex flex-wrap gap-1">
                 <Link to={`/portal/appointments/${appointment.id}`}><Button variant="ghost" size="sm">Details</Button></Link>
                 {isDoctor && view === "upcoming" && appointment.status === "CONFIRMED" && <>
