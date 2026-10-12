@@ -23,8 +23,8 @@ A comprehensive, full-stack clinic and doctor appointment management platform. D
 
 ## Live Demo & Deployment
 
-- **Frontend Application (Vercel):** [https://carepoint-frontend.vercel.app](https://doctors-appointment-app-frontend.vercel.app)
-- **Backend API Service:** [https://carepoint-api.onrender.com/api](https://doctors-appointment-api.onrender.com/api)
+- **Frontend Application (Vercel):** [https://carepoint-21.vercel.app](https://carepoint-21.vercel.app)
+- **Backend API Service:** [https://carepoint-ij7w.onrender.com/api](https://carepoint-ij7w.onrender.com/api)
 
 ### Demo Accounts
 
