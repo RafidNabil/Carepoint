@@ -79,6 +79,7 @@ export const getDoctorById = async (req, res, next) => {
 export const updateDoctorStatus = async (req, res, next) => {
   try {
     const doctor = await updateDoctorStatusService(
+      req.user.userId,
       req.params.id,
       req.body.isActive
     );
@@ -125,6 +126,7 @@ export const getPatientById = async (req, res, next) => {
 export const updatePatientStatus = async (req, res, next) => {
   try {
     const patient = await updatePatientStatusService(
+      req.user.userId,
       req.params.id,
       req.body.isActive
     );
