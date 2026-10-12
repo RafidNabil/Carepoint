@@ -64,6 +64,13 @@ export const refresh = async (req, res, next) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token is required",
+      });
+    }
+
     const result = await authService.refresh(refreshToken);
 
     res.cookie(
