@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   authenticate,
+  requireRole,
   requirePermission,
 } from "../../middlewares/auth.middleware.js";
 
@@ -44,6 +45,7 @@ import {
   removePermissionFromRole,
   getAuditLogs,
   getAuditLogById,
+  resetData,
 } from "./admin.controller.js";
 
 import {
@@ -61,9 +63,18 @@ import {
   updatePermissionSchema,
   assignPermissionSchema,
   auditLogQuerySchema,
+  resetDataSchema,
 } from "./admin.validation.js";
 
 const router = express.Router();
+
+router.post(
+  "/reset-data",
+  authenticate,
+  requireRole("ADMIN"),
+  validate(resetDataSchema),
+  resetData
+);
 
 /* =========================
    DOCTORS

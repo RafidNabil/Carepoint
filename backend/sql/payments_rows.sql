@@ -1,0 +1,1 @@
+INSERT INTO public.payments (id, "invoiceId", amount, method, status, "transactionId", "paidAt") VALUES ('11b1817d-28f3-4121-9422-2fe86b4fc9d6', 'd4087783-02a5-4d96-9eab-2bc49488a02e', '1200.00', 'CASH', 'COMPLETED', null, '2026-10-11 16:16:58.647');

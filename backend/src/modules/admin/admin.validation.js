@@ -4,6 +4,10 @@ export const updateUserStatusSchema = z.object({
   isActive: z.boolean(),
 });
 
+export const resetDataSchema = z.object({
+  confirm: z.literal(true),
+});
+
 export const createScheduleSchema = z.object({
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid start time"),

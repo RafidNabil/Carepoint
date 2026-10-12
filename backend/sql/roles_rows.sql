@@ -1,0 +1,1 @@
+INSERT INTO public.roles (id, name) VALUES ('71fdbc76-2140-4ec6-8043-eae38be94c20', 'ADMIN'), ('ac0fae1d-59f9-45a8-83f3-50a1c0b308ed', 'DOCTOR'), ('f09863d3-ce38-41a3-b21c-cea10b4939cc', 'PATIENT');

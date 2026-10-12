@@ -45,6 +45,20 @@ import {
   getAuditLogs as getAuditLogsService,
   getAuditLogById as getAuditLogByIdService,
 } from "./admin.service.js";
+import { resetApplicationData } from "./admin-reset.service.js";
+
+export const resetData = async (req, res, next) => {
+  try {
+    const result = await resetApplicationData();
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 /* =========================
    DOCTORS

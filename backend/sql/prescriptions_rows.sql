@@ -1,0 +1,1 @@
+INSERT INTO public.prescriptions (id, "appointmentId") VALUES ('0003f7ba-7910-4bab-ac08-7630d1a38ea0', '48105dcb-b0d0-4fc4-aa01-24578a2a4438');

@@ -1,0 +1,1 @@
+INSERT INTO public.invoices (id, "appointmentId", amount, total, status, "issuedAt") VALUES ('d4087783-02a5-4d96-9eab-2bc49488a02e', '48105dcb-b0d0-4fc4-aa01-24578a2a4438', '1200.00', '1200.00', 'PAID', '2026-10-11 16:16:04.248');

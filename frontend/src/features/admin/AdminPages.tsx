@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity, CalendarDays, CircleDollarSign, FileText,
+  Activity, CalendarDays, CircleDollarSign, Database, FileText,
   Plus, RefreshCw, Search, ShieldCheck, Stethoscope, Trash2, Users,
 } from "lucide-react";
 import {
@@ -28,7 +28,7 @@ import { formatDate, formatMoney, humanize } from "@/lib/utils";
 import { Badge, Button, Card, CardBody, EmptyState, ErrorState, Field, Input, PageHeader, Skeleton, Table, TableWrap, Td, Th } from "@/components/ui";
 import type { Appointment, Doctor, DoctorSchedule, Invoice } from "@/types";
 
-type AdminSection = "doctors" | "patients" | "appointments" | "schedules" | "invoices" | "payments" | "reports" | "settings" | "booking-rules" | "roles" | "permissions" | "audit-logs";
+type AdminSection = "doctors" | "patients" | "appointments" | "schedules" | "invoices" | "payments" | "reports" | "settings" | "booking-rules" | "roles" | "permissions" | "audit-logs" | "reset-data";
 type RecordRow = Record<string, unknown> & { id: string };
 type DirectoryEntry = {
   id: string;
@@ -51,10 +51,11 @@ const headings: Record<AdminSection, { title: string; eyebrow: string; descripti
   roles: { title: "Roles & permissions", eyebrow: "Access control", description: "Manage database-backed role names and permission assignments." },
   permissions: { title: "Roles & permissions", eyebrow: "Access control", description: "Manage permission names and their role assignments." },
   "audit-logs": { title: "Audit logs", eyebrow: "Governance", description: "Inspect immutable activity records and filter by the supported identifiers." },
+  "reset-data": { title: "Reset database data", eyebrow: "Administration", description: "Replace application records with the SQL snapshots provided in the backend." },
 };
 
 function parseSection(value?: string): AdminSection | null {
-  const sections: AdminSection[] = ["doctors", "patients", "appointments", "schedules", "invoices", "payments", "reports", "settings", "booking-rules", "roles", "permissions", "audit-logs"];
+  const sections: AdminSection[] = ["doctors", "patients", "appointments", "schedules", "invoices", "payments", "reports", "settings", "booking-rules", "roles", "permissions", "audit-logs", "reset-data"];
   return sections.includes(value as AdminSection) ? value as AdminSection : null;
 }
 
@@ -75,6 +76,7 @@ export function AdminPage() {
     case "roles": return <RolesPage initialTab="roles" />;
     case "permissions": return <RolesPage initialTab="permissions" />;
     case "audit-logs": return <AuditLogsPage />;
+    case "reset-data": return <ResetDataPage />;
   }
 }
 
@@ -136,7 +138,7 @@ function ConfirmDialog({ title, description, pending, destructive = false, onClo
         <AlertDialogCancel disabled={pending}>Go back</AlertDialogCancel>
         <AlertDialogAction
           disabled={pending}
-          onClick={onConfirm}
+          onClick={(event) => { event.preventDefault(); onConfirm(); }}
           className={destructive ? "bg-rose-600 text-white hover:bg-rose-700" : "bg-teal-700 text-white hover:bg-teal-800"}
         >{pending ? "Working…" : "Confirm"}</AlertDialogAction>
       </AlertDialogFooter>
@@ -380,6 +382,48 @@ function KeyValuePage({ kind }: { kind: "settings" | "booking-rules" }) {
       query.data?.length ? <TableWrap><Table><thead><tr><Th>Key</Th><Th>Value</Th><Th>Actions</Th></tr></thead><tbody>{query.data.map((row) => <tr key={row.id}><Td className="font-semibold">{row.key}</Td><Td>{edit?.id === row.id ? <Input aria-label={`Edit ${row.key}`} value={edit.value} onChange={(event) => setEdit({ ...edit, value: event.target.value })} /> : <span className="break-all">{row.value}</span>}</Td><Td><div className="flex gap-1">{edit?.id === row.id ? <><Button size="sm" onClick={() => update.mutate()} disabled={update.isPending}>Save</Button><Button size="sm" variant="ghost" onClick={() => setEdit(null)}>Cancel</Button></> : <Button size="sm" variant="outline" onClick={() => setEdit({ id: row.id, value: row.value })}>Edit value</Button>}<Button size="icon" variant="ghost" aria-label={`Delete ${row.key}`} onClick={() => setRemove({ id: row.id, key: row.key })}><Trash2 className="size-4 text-rose-600" /></Button></div></Td></tr>)}</tbody></Table></TableWrap> : <EmptyState icon={<Activity className="size-5" />} title={`No ${kind === "settings" ? "clinic settings" : "booking rules"}`} description="Create a key and value above. The backend stores values as strings and does not define their interpretation." />}</Card>
     {remove && <ConfirmDialog title={`Delete “${remove.key}”?`} description="This permanently removes the configuration record." pending={removeMutation.isPending} destructive onClose={() => setRemove(null)} onConfirm={() => removeMutation.mutate(remove.id)} />}
     <p className="mt-3 text-xs text-slate-400">Only the backend's raw key/value records are displayed; no undocumented booking behavior is inferred.</p>
+  </div>;
+}
+
+function ResetDataPage() {
+  const queryClient = useQueryClient();
+  const notify = useNotice();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const reset = useMutation({
+    mutationFn: () => adminApi.post<{ restoredFiles: number }>("reset-data", { confirm: true }),
+    onSuccess: async ({ restoredFiles }) => {
+      await queryClient.invalidateQueries();
+      setConfirmOpen(false);
+      notify(`Database reset complete. Restored ${restoredFiles} SQL files.`);
+    },
+    onError: (error) => notify(apiErrorMessage(error), "error"),
+  });
+
+  return <div>
+    <PageHeader {...headings["reset-data"]} />
+    <Card className="border-rose-200">
+      <CardBody className="space-y-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-700"><Database className="size-5" /></span>
+          <div>
+            <h2 className="font-semibold text-slate-950">Replace all application data</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">This permanently clears application tables, then restores the records in <code>backend/sql/</code>. Tables without snapshot files, including refresh tokens, clinic settings, and booking rules, will be left empty.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Prisma migration history in <code>_prisma_migrations</code> is preserved. The reset runs as one transaction, so a failed import rolls back the deletion.</p>
+          </div>
+        </div>
+        <Button variant="danger" disabled={reset.isPending} onClick={() => setConfirmOpen(true)}>
+          <Database className="size-4" />Reset database data
+        </Button>
+      </CardBody>
+    </Card>
+    {confirmOpen && <ConfirmDialog
+      title="Replace all application data?"
+      description="This cannot be undone. All current application records will be deleted and replaced by the backend/sql snapshots. Prisma migration history will not be changed."
+      pending={reset.isPending}
+      destructive
+      onClose={() => setConfirmOpen(false)}
+      onConfirm={() => reset.mutate()}
+    />}
   </div>;
 }
 

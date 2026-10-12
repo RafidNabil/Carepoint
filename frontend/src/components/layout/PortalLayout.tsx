@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  Activity, CalendarDays, ClipboardList, CreditCard, FileText, LayoutDashboard,
-  LogOut, Menu, Search, Settings2, ShieldCheck, Stethoscope, Users, UserRound,
+  Activity, CalendarDays, ClipboardList, CreditCard, Database, FileText, LayoutDashboard,
+  LogOut, Menu, Search, ShieldCheck, Stethoscope, Users, UserRound,
   WalletCards, X,
 } from "lucide-react";
 import { useState } from "react";
@@ -38,6 +38,7 @@ const navItems: Record<Role, Array<{ label: string; to: string; icon: typeof Lay
     { label: "Invoices", to: "/portal/admin/invoices", icon: FileText },
     { label: "Cash payments", to: "/portal/admin/payments", icon: WalletCards },
     { label: "Reports", to: "/portal/admin/reports", icon: ClipboardList },
+    { label: "Reset data", to: "/portal/admin/reset-data", icon: Database },
     // { label: "Clinic settings", to: "/portal/admin/settings", icon: Settings2 },
     // { label: "Booking rules", to: "/portal/admin/booking-rules", icon: CalendarDays },
     { label: "Roles & permissions", to: "/portal/admin/roles", icon: ShieldCheck },
