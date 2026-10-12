@@ -10,6 +10,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js",
+    "prisma:seed-sql": "node prisma/seed_sql.js",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:seed-permission": "node prisma/permission_seed.js",
     "prisma:seed-doctor": "node prisma/doctor_seed.js",
     "prisma:seed-patient": "node prisma/patient_seed.js",
