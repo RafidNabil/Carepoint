@@ -9,6 +9,27 @@ import { useNotice } from "@/components/shared/useNotice";
 import { Button, Field, Input, Skeleton } from "@/components/ui";
 import type { SessionUser } from "@/types";
 
+const demoAccounts = [
+  {
+    name: "Olivia Bennett",
+    role: "Patient",
+    email: "olivia.bennett@example.com",
+    password: "Patient@12345",
+  },
+  {
+    name: "Alexander Reed",
+    role: "Doctor",
+    email: "alexander.reed@example.com",
+    password: "Doctor@12345",
+  },
+  {
+    name: "James Anderson",
+    role: "Admin",
+    email: "james.anderson@example.com",
+    password: "Admin@12345",
+  },
+] as const;
+
 function destination(user: SessionUser) {
   return user.role === "ADMIN" ? "/portal" : "/portal";
 }
@@ -46,7 +67,7 @@ export function LoginPage() {
   const { user, loading, login } = useAuth();
   const navigate = useNavigate();
   const notify = useNotice();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFields>({
+  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<LoginFields>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
@@ -70,6 +91,33 @@ export function LoginPage() {
       <Field label="Password" error={errors.password?.message}><Input type="password" autoComplete="current-password" placeholder="Enter your password" {...register("password")} /></Field>
       <Button type="submit" className="w-full" disabled={isSubmitting}>{isSubmitting ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
     </form>
+    <section aria-labelledby="demo-accounts-heading" className="mt-7">
+      <h2 id="demo-accounts-heading" className="text-sm font-semibold text-slate-900">Try a demo account</h2>
+      <p className="mt-1 text-xs text-slate-500">Select an account to fill in its login details.</p>
+      <div className="mt-3 space-y-2">
+        {demoAccounts.map((account) => (
+          <div key={account.email} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-3.5 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-800">{account.name} <span className="font-normal text-slate-500">· {account.role}</span></p>
+              <p className="truncate text-xs text-slate-500">{account.email}</p>
+              <p className="text-xs text-slate-500">Password: {account.password}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => {
+                setValue("email", account.email, { shouldDirty: true, shouldValidate: true });
+                setValue("password", account.password, { shouldDirty: true, shouldValidate: true });
+              }}
+            >
+              Use
+            </Button>
+          </div>
+        ))}
+      </div>
+    </section>
     <p className="mt-6 text-center text-sm text-slate-500">New to Carepoint? <Link className="font-semibold text-teal-800 hover:underline" to="/register">Create a patient account</Link></p>
   </AuthFrame>;
 }
