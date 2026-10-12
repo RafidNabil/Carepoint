@@ -5,7 +5,8 @@ const isProduction = process.env.NODE_ENV === "production";
 const refreshCookieOptions = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: "strict",
+  sameSite: isProduction ? "none" : "lax",
+  secure: isProduction,
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: "/api/auth",
 };
@@ -99,7 +100,8 @@ export const logout = async (req, res, next) => {
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: isProduction ? "none" : "lax",
+      secure: isProduction,
       path: "/api/auth",
     });
 
